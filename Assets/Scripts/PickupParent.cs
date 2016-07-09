@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 using System;
 
@@ -10,12 +10,27 @@ public class PickupParent : MonoBehaviour {
 
     public Transform sphere;
 
+    // Unity Lifecycle Event 
     void Awake () {
         trackedObject = GetComponent<SteamVR_TrackedObject>();
-	}
-	
-	void FixedUpdate () {
+    }
+
+    // This method is expected to be called 90 frames per second on a VR capable machine.
+    void FixedUpdate () {
+    	// Controller device
         device = SteamVR_Controller.Input((int)trackedObject.index);
+        
+        // Reset object position on PressUp of the TouchPad
+        if (device.GetPressUp(SteamVR_Controller.ButtonMask.Touchpad))
+        {
+            Debug.Log("You pressed up on the TouchPad");
+
+            sphere.transform.position = new Vector3(0, 0, 0);
+            sphere.GetComponent<Rigidbody>().velocity = new Vector3(0, 0, 0);
+            sphere.GetComponent<Rigidbody>().angularVelocity = Vector3.zero;
+        }
+        
+        // Stubs for trigger events
         if (device.GetTouch(SteamVR_Controller.ButtonMask.Trigger))
         {
             Debug.Log("Holding down 'Touch' on the trigger");
@@ -45,17 +60,9 @@ public class PickupParent : MonoBehaviour {
         {
             Debug.Log("Holding down 'PressUp' on the trigger");
         }
-
-        if (device.GetPressUp(SteamVR_Controller.ButtonMask.Touchpad))
-        {
-            Debug.Log("You pressed up on the TouchPad");
-
-            sphere.transform.position = new Vector3(0, 0, 0);
-            sphere.GetComponent<Rigidbody>().velocity = new Vector3(0, 0, 0);
-            sphere.GetComponent<Rigidbody>().angularVelocity = Vector3.zero;
-        }
     }
 
+    // Enables attaching the rigid body object (Picking up the sphere)
     void OnTriggerStay(Collider col)
     {
         Debug.Log("You have collided with '"+col.name+"' and activated OnTriggerStay");
@@ -77,13 +84,16 @@ public class PickupParent : MonoBehaviour {
 
             tossObject(col.attachedRigidbody);
         }
-
-        
     }
 
+    /**
+    * Applies controller movement 'velocity' to bound object on TouchUp. This 
+    * is how you throw an object.
+    */
     private void tossObject(Rigidbody rigidBody)
     {
         Transform origin = trackedObject.origin ? trackedObject.origin : trackedObject.transform.parent;
+        
         if (origin != null)
         {
             rigidBody.velocity = origin.TransformVector(device.velocity);
@@ -93,6 +103,5 @@ public class PickupParent : MonoBehaviour {
             rigidBody.velocity = device.velocity;
             rigidBody.angularVelocity = device.angularVelocity;
         }
-        
     }
 }
